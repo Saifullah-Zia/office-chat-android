@@ -1,10 +1,17 @@
 package com.jcatsolutions.officechat;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.PowerManager;
+import android.provider.Settings;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -75,5 +82,39 @@ public class MainActivity extends BridgeActivity {
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1001);
         }
+        askOnce("battery", this::askIgnoreBatteryOptimization);
+        askOnce("fullscreen", this::askFullScreenCalls);
+    }
+
+    /**
+     * Calls when the app is closed: many phones (Oppo, Realme, Vivo, Xiaomi, ...) block push to apps
+     * that are "battery optimised", so a closed app never rings. Asks to be exempted, like calling apps do.
+     */
+    private void askIgnoreBatteryOptimization() {
+        if (Build.VERSION.SDK_INT < 23) return;
+        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+        if (pm == null || pm.isIgnoringBatteryOptimizations(getPackageName())) return;
+        try {
+            startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName())));
+        } catch (Exception ignored) {}
+    }
+
+    /** Android 14+: the full-screen call screen needs this permission (else only a pop-up shows). */
+    private void askFullScreenCalls() {
+        if (Build.VERSION.SDK_INT < 34) return;
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm == null || nm.canUseFullScreenIntent()) return;
+        try {
+            startActivity(new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + getPackageName())));
+        } catch (Exception ignored) {}
+    }
+
+    /** Each settings screen is shown once (not on every launch), a moment after the app opens. */
+    private void askOnce(String key, Runnable ask) {
+        SharedPreferences prefs = getSharedPreferences("officechat", MODE_PRIVATE);
+        if (prefs.getBoolean("asked_" + key, false)) return;
+        prefs.edit().putBoolean("asked_" + key, true).apply();
+        long delay = "battery".equals(key) ? 3_000 : 6_000;
+        new Handler(Looper.getMainLooper()).postDelayed(ask, delay);
     }
 }
