@@ -69,7 +69,10 @@ final class NativeActions {
 
     /** Keeps a call (and the microphone) going while the app is in the background. */
     static void setInCall(Context c, boolean inCall) {
+        boolean wasInCall = AppState.inCall;
         AppState.inCall = inCall;
+        // A call answered over the lock screen just ended: bring the lock screen back.
+        if (wasInCall && !inCall) MainActivity.callEnded();
         Intent service = new Intent(c, CallForegroundService.class);
         try {
             if (inCall) ContextCompat.startForegroundService(c, service);

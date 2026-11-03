@@ -49,4 +49,11 @@ final class WebBridge {
     public void openAppInfo() {
         NativeActions.openAppInfo(context);
     }
+
+    /** The lock screen is up: a call answered from it is shown on top, and the website hides chats. */
+    @JavascriptInterface
+    public boolean isDeviceLocked() {
+        android.app.KeyguardManager km = (android.app.KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+        return km != null && km.isKeyguardLocked();
+    }
 }

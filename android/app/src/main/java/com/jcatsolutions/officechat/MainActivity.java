@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.view.WindowManager;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -26,11 +27,20 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
 
     static final String EXTRA_URL = "officechat_url";
+    /** Answered on the lock screen: show the call over it (no PIN/pattern) until the call ends. */
+    static final String EXTRA_OVER_LOCK = "officechat_over_lock";
+    /** A call answered from the lock screen must start within this time, or the lock screen returns. */
+    private static final long OVER_LOCK_START_MS = 30_000;
+
+    private static java.lang.ref.WeakReference<MainActivity> current = new java.lang.ref.WeakReference<>(null);
+    private boolean overLock = false;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(OfficeChatPlugin.class);
         super.onCreate(savedInstanceState);
+        current = new java.lang.ref.WeakReference<>(this);
         CallNotifier.createChannels(this);
         NativeActions.refreshPushToken(this);
         boolean openedFromNotification = getIntent() != null && getIntent().getStringExtra(EXTRA_URL) != null;
@@ -72,9 +82,39 @@ public class MainActivity extends BridgeActivity {
         bridge.eval("window.__officeChatNativeVisible && window.__officeChatNativeVisible(" + visible + ")", value -> {});
     }
 
+    @Override
+    public void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        super.onDestroy();
+    }
+
+    /** Show the app over the lock screen (answered call), or stop doing so (the lock screen comes back). */
+    private void setOverLock(boolean on) {
+        overLock = on;
+        if (Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(on);
+            setTurnScreenOn(on);
+        } else {
+            int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+            if (on) getWindow().addFlags(flags); else getWindow().clearFlags(flags);
+        }
+    }
+
+    /** The call answered over the lock screen has ended: back behind the lock screen. */
+    static void callEnded() {
+        MainActivity a = current.get();
+        if (a != null) a.runOnUiThread(() -> { if (a.overLock) a.setOverLock(false); });
+    }
+
     /** Started from a notification: load the website at that address (e.g. /?answer=12&conv=3). */
     private void openFromIntent(Intent intent) {
         if (intent == null || bridge == null) return;
+        if (intent.getBooleanExtra(EXTRA_OVER_LOCK, false)) {
+            intent.removeExtra(EXTRA_OVER_LOCK);
+            setOverLock(true);
+            // Never leave the app open over the lock screen if the call didn't start.
+            handler.postDelayed(() -> { if (overLock && !AppState.inCall) setOverLock(false); }, OVER_LOCK_START_MS);
+        }
         String url = intent.getStringExtra(EXTRA_URL);
         long conv = intent.getLongExtra(CallNotifier.EXTRA_CONV, -1);
         if (conv >= 0 && url != null && url.contains("answer=")) CallNotifier.cancelIncoming(this, conv);

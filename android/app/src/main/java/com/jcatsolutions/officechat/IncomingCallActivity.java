@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import java.util.HashMap;
@@ -32,12 +33,14 @@ public class IncomingCallActivity extends Activity {
 
     private Map<String, String> data;
     private long conv;
+    /** Answer was tapped: ignore our own "stop ringing" broadcast. */
+    private boolean answering = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private final BroadcastReceiver ended = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getLongExtra(CallNotifier.EXTRA_CONV, -2) == conv) finish();
+            if (!answering && intent.getLongExtra(CallNotifier.EXTRA_CONV, -2) == conv) finish();
         }
     };
 
@@ -76,20 +79,21 @@ public class IncomingCallActivity extends Activity {
         super.onDestroy();
     }
 
+    /**
+     * Like WhatsApp: the call opens straight away, over the lock screen (no PIN/pattern first).
+     * The app hides chats while locked, and the lock screen comes back when the call ends.
+     */
     private void answer() {
-        CallNotifier.cancelIncoming(this, conv);
+        answering = true;
+        // Stop ringing without the "call ended" broadcast: that would close this screen mid-answer
+        // (which is what made answering from the lock screen do nothing).
+        NotificationManagerCompat.from(this).cancel(CallNotifier.callNotificationId(conv));
         String url = Config.WEB_URL + "/?answer=" + CallNotifier.nz(data.get("callId")) + "&conv=" + conv;
         Intent open = CallNotifier.openApp(this, url, conv);
         KeyguardManager km = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
-        if (Build.VERSION.SDK_INT >= 26 && km != null && km.isKeyguardLocked()) {
-            // Unlock first (PIN/fingerprint), then open the call.
-            km.requestDismissKeyguard(this, new KeyguardManager.KeyguardDismissCallback() {
-                @Override public void onDismissSucceeded() { startActivity(open); finish(); }
-            });
-        } else {
-            startActivity(open);
-            finish();
-        }
+        if (km != null && km.isKeyguardLocked()) open.putExtra(MainActivity.EXTRA_OVER_LOCK, true);
+        startActivity(open);
+        finish();
     }
 
     private void decline() {
