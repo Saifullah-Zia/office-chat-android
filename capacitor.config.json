@@ -1,0 +1,13 @@
+{
+  "appId": "com.jcatsolutions.officechat",
+  "appName": "Office Chat",
+  "webDir": "www",
+  "server": {
+    "url": "https://office-chat-frontend.vercel.app",
+    "androidScheme": "https",
+    "allowNavigation": ["office-chat-frontend.vercel.app", "office-chat-backend-production.up.railway.app"]
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
