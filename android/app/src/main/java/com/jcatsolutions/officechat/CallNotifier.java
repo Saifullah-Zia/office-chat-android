@@ -143,6 +143,25 @@ final class CallNotifier {
                 .build());
     }
 
+    /** The phone check: rings once on the calls channel, so it also proves the ringtone and pop-up work. */
+    static void showTest(Context c, Map<String, String> d) {
+        if (!canNotify(c)) return;
+        createChannels(c);
+        PendingIntent open = PendingIntent.getActivity(c, 9, openApp(c, null, -1), FLAGS);
+        notify(c, 400_000, new NotificationCompat.Builder(c, CH_CALLS)
+                .setSmallIcon(android.R.drawable.sym_call_incoming)
+                .setContentTitle(d.get("title"))
+                .setContentText(d.get("body"))
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE), AudioManager.STREAM_RING)
+                .setVibrate(VIBRATE)
+                .setAutoCancel(true)
+                .setTimeoutAfter(20_000)
+                .setContentIntent(open)
+                .build());
+    }
+
     /** Shown while a call is going on (keeps it alive in the background). Tapping returns to the call. */
     static Notification ongoing(Context c) {
         createChannels(c);
