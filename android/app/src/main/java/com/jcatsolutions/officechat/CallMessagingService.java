@@ -26,9 +26,13 @@ public class CallMessagingService extends FirebaseMessagingService {
                 .apply();
 
         if ("call".equals(type)) {
+            // The server sends each ring up to 3 times (a sleepy phone can miss one): ring once per call,
+            // and never for a call that's already over.
+            if (!firstTimeFor(data.get("callId"))) return;
             // App open on screen: the website is already ringing.
             if (!AppState.foreground) CallNotifier.showIncoming(this, data);
         } else if ("call-cancel".equals(type)) {
+            firstTimeFor(data.get("callId")); // a repeat ring arriving late is ignored
             CallNotifier.cancelIncoming(this, CallNotifier.parseLong(data.get("conversationId")));
             if ("true".equals(data.get("missed")) && !AppState.foreground) CallNotifier.showMissed(this, data);
         } else if ("message".equals(type)) {
@@ -36,6 +40,19 @@ public class CallMessagingService extends FirebaseMessagingService {
         } else if ("test".equals(type)) {
             CallNotifier.showTest(this, data);
         }
+    }
+
+    /** True the first time a call id is seen (the last few are remembered, even if the app is closed). */
+    private boolean firstTimeFor(String callId) {
+        if (callId == null || callId.isEmpty() || "null".equals(callId)) return true;
+        android.content.SharedPreferences p = getSharedPreferences("officechat", MODE_PRIVATE);
+        String seen = p.getString("seen_calls", "");
+        if (("," + seen + ",").contains("," + callId + ",")) return false;
+        String[] ids = seen.isEmpty() ? new String[0] : seen.split(",");
+        StringBuilder keep = new StringBuilder(callId);
+        for (int i = 0; i < Math.min(ids.length, 19); i++) keep.append(',').append(ids[i]);
+        p.edit().putString("seen_calls", keep.toString()).apply();
+        return true;
     }
 
     @Override
