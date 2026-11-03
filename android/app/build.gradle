@@ -16,10 +16,30 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Every APK from this project is signed with the company's release key (keys/office-chat-release.jks,
+    // settings in android/keystore.properties: both kept out of git, back them up!). One key for every
+    // build means updates always install over the previous version, on any phone.
+    def keystoreFile = rootProject.file('keystore.properties')
+    def keystore = new Properties()
+    if (keystoreFile.exists()) keystoreFile.withInputStream { keystore.load(it) }
+    signingConfigs {
+        if (keystoreFile.exists()) {
+            officeChat {
+                storeFile file(keystore['storeFile'])
+                storePassword keystore['storePassword']
+                keyAlias keystore['keyAlias']
+                keyPassword keystore['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (keystoreFile.exists()) signingConfig signingConfigs.officeChat
+        }
+        debug {
+            if (keystoreFile.exists()) signingConfig signingConfigs.officeChat
         }
     }
 }

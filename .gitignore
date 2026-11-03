@@ -6,3 +6,5 @@ android/app/build/
 android/local.properties
 *.keystore
 *.jks
+keystore.properties
+keys/
