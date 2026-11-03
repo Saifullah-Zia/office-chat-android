@@ -32,8 +32,16 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(OfficeChatPlugin.class);
         super.onCreate(savedInstanceState);
         CallNotifier.createChannels(this);
-        // Ringtone / call sounds start without a tap first.
-        if (bridge != null) bridge.getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+        NativeActions.refreshPushToken(this);
+        boolean openedFromNotification = getIntent() != null && getIntent().getStringExtra(EXTRA_URL) != null;
+        if (bridge != null) {
+            // Ringtone / call sounds start without a tap first.
+            bridge.getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+            // window.OfficeChatAndroid for the website. It's added to pages loaded from now on, so load
+            // the site again (unless a notification is about to load its own page anyway).
+            bridge.getWebView().addJavascriptInterface(new WebBridge(this), "OfficeChatAndroid");
+            if (!openedFromNotification) bridge.getWebView().post(() -> bridge.getWebView().loadUrl(Config.WEB_URL + "/"));
+        }
         askNotificationPermission();
         openFromIntent(getIntent());
     }

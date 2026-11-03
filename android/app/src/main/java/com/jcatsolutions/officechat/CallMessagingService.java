@@ -40,6 +40,7 @@ public class CallMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onNewToken(@NonNull String token) {
-        // The website registers the current token with the server every time the app opens.
+        // Kept for the website, which registers it with the server every time the app opens.
+        NativeActions.savePushToken(this, token);
     }
 }
