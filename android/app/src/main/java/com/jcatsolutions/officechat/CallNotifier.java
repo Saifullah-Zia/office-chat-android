@@ -71,7 +71,7 @@ final class CallNotifier {
         createChannels(c);
         long conv = parseLong(d.get("conversationId"));
         String callId = nz(d.get("callId"));
-        String name = d.get("fromUserName") != null ? d.get("fromUserName") : "Office Chat";
+        String name = d.get("fromUserName") != null ? d.get("fromUserName") : "Jcat Connect";
 
         PendingIntent answer = PendingIntent.getActivity(c, (int) (conv * 10 + 1),
                 openApp(c, Config.WEB_URL + "/?answer=" + callId + "&conv=" + conv, conv), FLAGS);
@@ -132,7 +132,7 @@ final class CallNotifier {
         PendingIntent open = PendingIntent.getActivity(c, (int) (conv * 10 + 5),
                 openApp(c, Config.WEB_URL + "/?chat=" + conv + (messageId.isEmpty() ? "" : "&message=" + messageId), conv), FLAGS);
         notify(c, (int) (300_000 + conv), new NotificationCompat.Builder(c, CH_MESSAGES)
-                .setSmallIcon(android.R.drawable.sym_action_chat)
+                .setSmallIcon(R.drawable.ic_stat_jcat)
                 .setContentTitle(d.get("title"))
                 .setContentText(d.get("body"))
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(d.get("body")))
@@ -168,7 +168,7 @@ final class CallNotifier {
         PendingIntent open = PendingIntent.getActivity(c, 7, openApp(c, null, -1), FLAGS);
         return new NotificationCompat.Builder(c, CH_ONGOING)
                 .setSmallIcon(android.R.drawable.sym_action_call)
-                .setContentTitle("Office Chat call in progress")
+                .setContentTitle("Jcat Connect call in progress")
                 .setContentText("Tap to return to the call")
                 .setOngoing(true)
                 .setCategory(NotificationCompat.CATEGORY_CALL)

@@ -20,7 +20,7 @@ import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
 
 /**
- * The app: shows the Office Chat website (server.url in capacitor.config.json), plus:
+ * The app: shows the Jcat Connect website (server.url in capacitor.config.json), plus:
  * - opens it at a given address when started from a call or message notification;
  * - tells the website when it goes to the background, so the server sends notifications.
  */

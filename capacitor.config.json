@@ -1,6 +1,6 @@
 {
   "appId": "com.jcatsolutions.officechat",
-  "appName": "Office Chat",
+  "appName": "Jcat Connect",
   "webDir": "www",
   "server": {
     "url": "https://office-chat-frontend.vercel.app",
