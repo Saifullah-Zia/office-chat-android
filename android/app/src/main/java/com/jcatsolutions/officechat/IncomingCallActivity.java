@@ -111,7 +111,7 @@ public class IncomingCallActivity extends Activity {
 
         boolean video = "VIDEO".equals(data.get("callType"));
         TextView kind = text(video ? "Incoming video call" : "Incoming voice call", 16, "#94a3b8", false);
-        String caller = data.get("fromUserName") != null ? data.get("fromUserName") : "Jcat Connect";
+        String caller = data.get("fromUserName") != null ? data.get("fromUserName") : "JCAT Connect";
         TextView name = text(caller, 32, "#ffffff", true);
         name.setPadding(0, 16 * dp, 0, 0);
         root.addView(kind);

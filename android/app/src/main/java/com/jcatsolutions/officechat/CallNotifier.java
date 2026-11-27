@@ -71,7 +71,7 @@ final class CallNotifier {
         createChannels(c);
         long conv = parseLong(d.get("conversationId"));
         String callId = nz(d.get("callId"));
-        String name = d.get("fromUserName") != null ? d.get("fromUserName") : "Jcat Connect";
+        String name = d.get("fromUserName") != null ? d.get("fromUserName") : "JCAT Connect";
 
         PendingIntent answer = PendingIntent.getActivity(c, (int) (conv * 10 + 1),
                 openApp(c, Config.WEB_URL + "/?answer=" + callId + "&conv=" + conv, conv), FLAGS);
@@ -168,7 +168,7 @@ final class CallNotifier {
         PendingIntent open = PendingIntent.getActivity(c, 7, openApp(c, null, -1), FLAGS);
         return new NotificationCompat.Builder(c, CH_ONGOING)
                 .setSmallIcon(android.R.drawable.sym_action_call)
-                .setContentTitle("Jcat Connect call in progress")
+                .setContentTitle("JCAT Connect call in progress")
                 .setContentText("Tap to return to the call")
                 .setOngoing(true)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
